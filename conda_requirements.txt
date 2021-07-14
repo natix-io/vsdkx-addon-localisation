@@ -1,0 +1,4 @@
+timm
+torch
+opencv-contrib-python==4.4.0.46
+git+https://gitlab+deploy-token-432901:B7knEYm-ywm6GSmjKrs9@gitlab.com/natix/visiondeploy/aiconnector.git

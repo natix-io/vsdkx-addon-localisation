@@ -1,0 +1,4 @@
+pillow==8.2.0
+numpy==1.20.2
+pyyaml==5.3.1
+git+https://gitlab+deploy-token-432901:B7knEYm-ywm6GSmjKrs9@gitlab.com/natix/visiondeploy/aiconnector.git

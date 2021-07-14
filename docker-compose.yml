@@ -1,0 +1,39 @@
+version: '3.4'
+
+services:
+
+  main:
+
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+
+    network_mode: host
+
+    expose:
+      - 7919
+
+    environment:
+      - GRPC_PORT=7919
+      - TZ="Europe/Zurich"
+      - DISPLAY=unix$DISPLAY # 192.168.8.105:0
+      - UDEV=1
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_DEFAULT_REGION
+      - QT_DEBUG_PLUGINS=1
+
+    volumes:
+      - /tmp/.x11-unix:/tmp/.x11-unix:ro
+      - /dev:/dev
+      - ./config:/app/config
+      - ./bin:/app/bin
+
+    devices:
+      - /dev:/dev
+
+    privileged: true
+
+    command: bash -c "./start.sh"
+
+    tty: true
