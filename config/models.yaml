@@ -1,3 +1,0 @@
-models_import_path:
-  DPT_Hybrid: core.models.depth_model
-  class_name: DepthEstimator

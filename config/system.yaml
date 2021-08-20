@@ -1,8 +1,0 @@
-event_detector_details:
-  model_type: 'DPT_Hybrid'
-debug:
-  debug_mode: True
-  output_depth_image: './bin/inference/test.jpg'
-model_settings:
-  image_type: 'BGR'
-  device: 'cpu'
