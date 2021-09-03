@@ -3,8 +3,10 @@ from typing import Dict, List
 import numpy as np
 import torch
 
+from vsdkx.core.interfaces import Addon, AddonObject
 
-class DepthEstimatorClass:
+
+class DepthEstimator(Addon):
     """
     Depth Estimator class
 
@@ -19,26 +21,15 @@ class DepthEstimatorClass:
         'model_type' (string): The name of depth estimator model;
     """
 
-    def __init__(self,
-                 model_settings: dict,
-                 system_config: dict,
-                 debug_mode: bool
-                 ):
-        """
-        Class constructor.
-
-        Args:
-            model_settings (dict): Model settings config with the following
-                                   keys: device.
-            system_config (dict): Model config with the following keys: stages,
-                                  grid_size, model_type.
-            debug_mode (bool): Flag of debug mode.
-        """
-        self.debug_mode = debug_mode
+    def __init__(self, addon_config: dict, model_settings: dict,
+                 model_config: dict, drawing_config: dict):
+        super().__init__(addon_config, model_settings, model_config,
+                         drawing_config)
+        # self.debug_mode = drawing_config.get("depth", {})
         self.device = model_settings['device']
-        self.stages = system_config['stages']
-        self.grid_size = system_config['grid_size']
-        self.model_type = system_config['model_type']
+        self.stages = addon_config['stages']
+        self.grid_size = addon_config['grid_size']
+        self.model_type = addon_config['model_type']
         self.model = torch.hub.load("intel-isl/MiDaS", self.model_type).to(
             self.device)
         self.transform = None
@@ -49,7 +40,7 @@ class DepthEstimatorClass:
             self.transform = midas_transforms.small_transform
 
     @torch.no_grad()
-    def inference(self, frame: np.ndarray, detections: Dict) -> Dict:
+    def post_process(self, addon_object: AddonObject) -> AddonObject:
         """
         Estimates Depth of detected object on image. The function uses objects'
         coordinates to estimate their relative depth predicted by depth
@@ -68,22 +59,23 @@ class DepthEstimatorClass:
                     as before but all elements will be sorted in the order of
                     object's distance from the camera: first will be closest,ect
         """
-        coords = detections['boxes']
-        if len(coords) == 0: # if no objects are detected then return same input
-            return detections
+        coords = addon_object.inference.boxes
+        # if no objects are detected then return same input
+        if len(coords) == 0:
+            return addon_object
 
         # get confidence and class values to reorder them by objects' distances
         # from a camera
-        scores = detections['scores']
-        classes = detections['classes']
+        scores = addon_object.inference.scores
+        classes = addon_object.inference.classes
 
         # estimate depth of every pixel of an inout image
-        depth_img = self.estimate_depth(frame)
+        depth_img = self._estimate_depth(addon_object.frame)
         # get center coordinates of detected objects
-        center_points = self.get_center_points(coords)
+        center_points = self._get_center_points(coords)
         # get estimated depth values of around centers of objects
-        image_squares = self.get_center_area(depth_img, center_points,
-                                             square_size=self.grid_size)
+        image_squares = self._get_center_area(depth_img, center_points,
+                                              square_size=self.grid_size)
 
         # get average of estimated depth values around objects
         object_distances = [int(grid.mean()) for grid in image_squares]
@@ -97,9 +89,9 @@ class DepthEstimatorClass:
             np.int32).tolist()
 
         # overwrite old values
-        detections['boxes'] = sorted_coords
-        detections['scores'] = sorted_scores
-        detections['classes'] = sorted_classes
+        addon_object.inference.boxes = sorted_coords
+        addon_object.inference.scores = sorted_scores
+        addon_object.inference.classes = sorted_classes
 
         # categorise objects by distance stages from a camera
         sorted_obj_distances = np.array(object_distances)[depth_sizes]
@@ -115,16 +107,16 @@ class DepthEstimatorClass:
                     stage_distance_ids.append((self.stages - 1) - j)
                     break
         try:
-            detections['extra']['distance_ids'] = stage_distance_ids
+            addon_object.inference.extra['distance_ids'] = stage_distance_ids
         except KeyError:
-            detections['extra'] = {
+            addon_object.inference.extra['extra'] = {
                 'distance_ids': stage_distance_ids
             }
 
-        return detections
+        return addon_object
 
     @staticmethod
-    def get_center_points(coords: List[List[int]]) -> List[List[int]]:
+    def _get_center_points(coords: List[List[int]]) -> List[List[int]]:
         """
         Finds center points of detected object from coordinates.
 
@@ -139,9 +131,9 @@ class DepthEstimatorClass:
         return center_points
 
     @staticmethod
-    def get_center_area(image: np.ndarray,
-                        center_points: list,
-                        square_size: int = 10) -> List[np.ndarray]:
+    def _get_center_area(image: np.ndarray,
+                         center_points: list,
+                         square_size: int = 10) -> List[np.ndarray]:
         """
         Splits image into centers.
 
@@ -158,7 +150,7 @@ class DepthEstimatorClass:
                          center_points]
         return image_squares
 
-    def estimate_depth(self, image: np.ndarray) -> np.ndarray:
+    def _estimate_depth(self, image: np.ndarray) -> np.ndarray:
         """
         Returns depth estimated image.
 
