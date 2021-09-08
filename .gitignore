@@ -1,0 +1,8 @@
+dist/
+build/
+*.egg-info/
+.idea/
+*.iml
+*.pt
+*/__pycache__
+*/*/__pycache__
