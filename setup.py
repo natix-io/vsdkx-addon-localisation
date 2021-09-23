@@ -22,7 +22,7 @@ setup(
         'matplotlib==3.4.2',
         'seaborn==0.11.1',
         'pillow==8.2.0',
-        'numpy==1.20.2',
+        'numpy==1.19.5',
         'pyyaml==5.3.1'
     ],
     version='1.0',
