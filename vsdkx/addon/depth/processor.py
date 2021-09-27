@@ -83,10 +83,10 @@ class DepthEstimator(Addon):
         depth_sizes = np.argsort(object_distances).tolist()
         depth_sizes = depth_sizes[::-1]
         # now sort coords, classes and scores by objects distances from a camera
-        sorted_coords = np.array(coords)[depth_sizes].astype(np.int32).tolist()
-        sorted_scores = np.array(scores)[depth_sizes].astype(np.int32).tolist()
+        sorted_coords = np.array(coords)[depth_sizes].astype(np.int32)
+        sorted_scores = np.array(scores)[depth_sizes].astype(np.int32)
         sorted_classes = np.array(classes)[depth_sizes].astype(
-            np.int32).tolist()
+            np.int32)
 
         # overwrite old values
         addon_object.inference.boxes = sorted_coords
