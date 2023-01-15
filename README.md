@@ -52,3 +52,29 @@ depth_estimator = DepthEstimator(
                 debug_mode=system_config['debug']['debug_mode']
             )
 ```
+
+### Input/ Output
+
+This addon needs to be executed after inference as it relies on the information of the detected bounding boxes: 
+
+- Input:
+
+   ```python
+   coords = addon_object.inference.boxes
+   scores = addon_object.inference.scores
+   classes = addon_object.inference.classes
+
+   # estimate depth of every pixel of an inout image
+   depth_img = self._estimate_depth(addon_object.frame)
+   ```
+   
+- Output
+
+   ```python
+   # Ordered bounding boxes, scores and classes 
+   addon_object.inference.boxes = sorted_coords
+   addon_object.inference.scores = sorted_scores
+   addon_object.inference.classes = sorted_classes
+   # Distance IDs for each corresponding bounding box, the IDs correspond to the configured number of stages and grib size
+   addon_object.inference.extra['distance_ids'] = stage_distance_ids
+   ```
